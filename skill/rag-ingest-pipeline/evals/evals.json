@@ -1,0 +1,23 @@
+{
+  "skill_name": "rag-ingest-pipeline",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我入职了新公司，老板给了一堆产品 PDF（约 30 份，含扫描件）和一个商品库的 JSON 导出，想做一个内部知识库让同事能用自然语言查产品信息。资料在 ~/newcorpus/ 下。请帮我从零搭起来。",
+      "expected_output": "先做资料摸底提问（形态/重叠/权威源），生成 config.yaml + eval_cases.yaml，走 parse→ingest→review→eval 流程，给出 Hit 指标，不直接开始手写检索代码",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "我们已有的 RAG 检索总是把型号答错，用户搜 A616 的参数老是返回 A333 的内容，而且商品编码搜不到。切片是按固定 300 字硬切的。怎么办？",
+      "expected_output": "诊断三点：标题切分+父标题压入替代硬切、重排层、编码类走 where 元数据过滤——引用 skill 的决策依据而非泛泛建议",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "帮我把这批 PDF 转成 md 并且入库到向量库，做完告诉我检索效果怎么样",
+      "expected_output": "使用管线脚本 parse→ingest→eval；parse 前提醒 MinerU 环境要求（py≤3.13、standard 档、模型源）；评测先提案黄金问题集给用户确认；导出 chunks_review 供人工抽查",
+      "files": []
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+# ============================================================
+# RAG 入库流水线配置（换公司/换项目：只复制本模板改这里 + eval_cases）
+# 所有路径相对本文件所在目录的 project_root
+# ============================================================
+project: my-project
+project_root: .            # Docker 挂载 /work 时填 .
+
+# ── parse：PDF 类资料喂给 MinerU VLM ──
+parse:
+  pdf_dirs:                # 公司 PDF 资料目录（可多个）
+    - ./corpus_pdfs
+  output_dir: ./extracted_md
+  skip_stems: []           # 已被其他源覆盖的文件名(去扩展名)，避免重复入库
+  tier: standard           # standard=VLM 乱码免疫(推荐)；flash 仅快速预览
+  timeout: 900
+
+# ── 入库源：type 决定预处理管线，按资料形态添加 ──
+sources:
+  pdf_extracted:
+    type: mineru_vlm_dir   # MinerU 提取产物
+    dir: ./extracted_md
+    brand: 公司品牌词        # 显式填写！检索过滤和溯源都靠它
+    doc_type: 资料文档
+    preprocess: [nfkc, page_markers, flatten_html_tables, strip_image_placeholders]
+  # 数字原生资料(JSON/数据库导出)参考：先写小脚本转成"每块自含"的 md 再走 markdown_dir，
+  # 转换原则见 references/decisions.md 的"schema 映射"节
+  # structured_export:
+  #   type: markdown_dir
+  #   dir: ./structured_md
+  #   brand: 公司品牌词
+  #   doc_type: 产品库
+  #   preprocess: [nfkc]
+
+# ── 切片 ──
+chunk:
+  headers: ["#", "##", "###"]
+  chunk_size: 500          # 中文语料 500 起步；块中位长度目标 500-800 字符
+  overlap: 80
+  min_content_chars: 20    # 低于此有效字符数的残渣块不入库
+  prepend_parent_header: true   # 子块压入父级标题，保证每块检索自含(强烈建议保持开启)
+
+# ── 嵌入 ──
+embed:
+  model: BAAI/bge-large-zh-v1.5   # 中文语料；多语言/长文本可换 BAAI/bge-m3
+  query_prefix: "为这个句子生成表示以用于检索相关文章："   # bge-zh 系列官方要求，缺了掉召回
+  batch_size: 32
+
+# ── 向量库 ──
+store:
+  path: ./vector_kb        # 本地文件夹，随拷随走
+  collection: kb
+
+# ── 元数据抽取规则：从块文本抽字段(精确值查询走 where 过滤，不依赖向量) ──
+extract_rules:
+  - field: sku_code        # 示例：抽取商品编码；按公司资料改成正则
+    regex: '编码[:：]\s*(\d{6,})'
+
+# ── 重排层 ──
+rerank:
+  enabled: true
+  model: BAAI/bge-reranker-base     # 内存宽裕可升级 BAAI/bge-reranker-v2-m3
+  fetch_k: 8
+
+review_output: ./chunks_review.txt

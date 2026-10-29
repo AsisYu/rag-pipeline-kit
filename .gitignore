@@ -1,0 +1,5 @@
+work/
+vector_kb/
+__pycache__/
+*.pyc
+feedback.json

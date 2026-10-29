@@ -1,0 +1,4 @@
+skill/rag-ingest-pipeline/evals
+*.md
+!skill/rag-ingest-pipeline/SKILL.md
+vector_kb

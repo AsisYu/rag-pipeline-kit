@@ -1,0 +1,9 @@
+# 常用形态：语料目录 + HF 缓存挂载，改 config.yaml 后 docker compose run
+services:
+  rag:
+    build: .
+    image: rag-pipeline-kit
+    volumes:
+      - ./work:/work
+      - ${HOME}/.cache/huggingface:/root/.cache/huggingface
+      - ${HOME}/.mineru:/root/.mineru
